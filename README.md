@@ -6,9 +6,7 @@ For sbt 0.13.8.
 
 ## Getting started
 
-1. Clone this repository and run `sbt publish-local`
-
-2. Add the following dependency to your `plugins.sbt`
+Add the following dependency to your `plugins.sbt`
 
 ```scala
 resolvers ++= Seq(
@@ -18,7 +16,7 @@ resolvers ++= Seq(
 addSbtPlugin("wav.devtools" % "sbt-httpserver" % "0.1.0")
 ```
 
-3. Add the following to your `build.sbt` to start using it.
+Add the following to your `build.sbt` to start using it.
 
 ```scala
 import wav.devtools.sbt.httpserver.SbtHttpServerPlugin
