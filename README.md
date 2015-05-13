@@ -1,6 +1,6 @@
 ## SBT httpserver
 
-Hosts an http4s `HttpService` sbt, suitable for client-side development if the filesystem doesn't suffice.
+Host an http4s service in SBT
 
 For sbt 0.13.8.
 
@@ -11,7 +11,11 @@ For sbt 0.13.8.
 2. Add the following dependency to your `plugins.sbt`
 
 ```scala
-addSbtPlugin("wav.devtools" % "sbt-httpserver" % version)
+resolvers ++= Seq(
+    Resolver.url("wav", url("https://dl.bintray.com/wav/maven"))(Resolver.ivyStylePatterns),
+    "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases") // scalaz-stream
+
+addSbtPlugin("wav.devtools" % "sbt-httpserver" % "0.1.0")
 ```
 
 3. Add the following to your `build.sbt` to start using it.

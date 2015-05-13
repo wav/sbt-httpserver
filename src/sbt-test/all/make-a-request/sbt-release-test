@@ -1,0 +1,2 @@
+#!/bin/bash
+sbt -DisReleaseTest=yes -Dproject.version=0.1.0 testService

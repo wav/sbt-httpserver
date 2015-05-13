@@ -2,11 +2,9 @@ organization := "wav.devtools"
 
 name := "sbt-httpserver"
 
-description := "Host an http4s server in SBT"
+description := "Host an http4s service in SBT"
 
 licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))
-
-bintrayOrganization in bintray := None
 
 // ++
 
@@ -51,3 +49,9 @@ publishMavenStyle := false
 bintrayReleaseOnPublish in ThisBuild := false
 
 publishArtifact in Test := false
+
+publishArtifact in (Compile, packageSrc) := false
+
+publishArtifact in (Compile, packageDoc) := false
+
+bintrayRepository := "maven"

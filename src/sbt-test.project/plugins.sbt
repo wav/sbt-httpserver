@@ -1,5 +1,18 @@
+val releaseRepo = Resolver.url("wav", url("https://dl.bintray.com/wav/maven"))(Resolver.ivyStylePatterns)
+
 val ivyLocal = Resolver.file("local", file(Path.userHome.absolutePath + "/.ivy2/local"))(Resolver.ivyStylePatterns)
 
-externalResolvers := Seq(ivyLocal)
+val V = sys.props.get("project.version").getOrElse("NOVERSION")
 
-addSbtPlugin("wav.devtools" % "sbt-httpserver" % sys.props("project.version"))
+val isReleaseTest = sys.props.get("isReleaseTest").getOrElse("no") == "yes"
+
+resolvers ++= {
+	if (isReleaseTest) Seq(
+		releaseRepo,
+	    "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases") // scalaz-stream
+	else Seq.empty
+}
+
+externalResolvers := (if(isReleaseTest) Seq(ivyLocal) else Seq.empty)
+
+addSbtPlugin("wav.devtools" % "sbt-httpserver" % V)
