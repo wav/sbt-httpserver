@@ -13,6 +13,6 @@ resolvers ++= {
 	else Seq.empty
 }
 
-externalResolvers := (if(isReleaseTest) Seq(ivyLocal) else Seq.empty)
+externalResolvers := (if(isReleaseTest) Seq.empty else Seq(ivyLocal))
 
 addSbtPlugin("wav.devtools" % "sbt-httpserver" % V)

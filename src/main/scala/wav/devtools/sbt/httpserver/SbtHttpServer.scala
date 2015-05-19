@@ -1,44 +1,18 @@
 package wav.devtools.sbt.httpserver
 
+import org.http4s.util.CaseInsensitiveString
 import sbt._
 import Keys._
-import org.http4s.dsl._
-import org.http4s.{MediaType, Response, Request}
-import org.http4s.headers.{`Content-Type`}
-import org.http4s.server.{Server, HttpService}
+import org.http4s.server._
 import org.http4s.server.blaze.BlazeBuilder
-import java.io.File
-
-object FileServer {
-
-  private def assemblePath(baseDir: File, name: String): String = {
-    val realname = if (name.startsWith("/")) name.substring(1) else name
-    s"${baseDir.getCanonicalPath}/$realname"
-  }
-
-  def service(baseDir: sbt.RichFile) = HttpService {
-    case GET -> Root / path =>
-      val fullPath = assemblePath(baseDir.asFile, path)
-      if (!file(fullPath).exists) NotFound(s"404 Not Found: '$fullPath'")
-      else {
-        val mime = {
-          val parts = path.split('.')
-          if (parts.length > 0) MediaType.forExtension(parts.last)
-            .getOrElse(MediaType.`application/octet-stream`)
-          else MediaType.`application/octet-stream`
-        }
-        val bytes = io.Source.fromFile(fullPath).map(_.toByte).toArray
-        Ok(bytes).putHeaders(`Content-Type`(mime))
-      }
-  }
-
-}
 
 object Import {
 
+  val si = CaseInsensitiveString.apply _
+
   object HttpServerKeys {
 
-    lazy val httpServerService = settingKey[HttpService]("The http service to be mounted onto the server")
+    lazy val httpServerService = settingKey[Seq[HttpService]]("The http service to be mounted onto the server")
     lazy val httpServerPort = settingKey[Int]("The port to host the http server")
     lazy val httpServerAddress = settingKey[String]("The http service address. (Calculated, not an input)")
 
@@ -46,30 +20,56 @@ object Import {
 
   import HttpServerKeys._
 
-  lazy val serveBuildFolder = httpServerService in Global := FileServer.service((baseDirectory in ThisBuild).value)
+  type ServiceSettings = SettingKey[Seq[HttpService]] => Seq[Setting[_]]
+
+  lazy val serveBuildFolderService: ServiceSettings =
+    _ += FileServer.service(si("files"), Seq((baseDirectory in ThisBuild).value))
+
+  def buildEventService[T](eventMapping: (TaskKey[T], String)*): ServiceSettings = k => {
+    val (emitter, s) = EventStream.service(si("buildEvents"))
+    def emit(t: TaskKey[T], event: String) =
+      t <<= (name in t.scope, t) { (n, t) =>
+        t.andFinally(emitter( s"""{"event":"$event","project":"$n"}"""))
+      }
+    Seq(k += s) ++ eventMapping.map(e => emit(e._1,e._2))
+    ??? // TODO: load in Global with WebSocket support
+  }
+
+  def addHttpServices(settings: ServiceSettings*): Seq[Setting[_]] =
+    settings.map(_(httpServerService in Global)).flatten
+
+  def setHttpServices(settings: ServiceSettings*): Seq[Setting[_]] =
+    (httpServerService in Global := Seq.empty) +: addHttpServices(settings: _*)
 
   lazy val httpServerSettings: Seq[Setting[_]] = Seq(
     onLoad in Global := (onLoad in Global).value andThen (load(_, (httpServerService in Global).value, (httpServerPort in Global).value)),
     (onUnload in Global) := (onUnload in Global).value andThen (unload),
     httpServerPort in Global := 8083,
-    serveBuildFolder,
-    httpServerAddress in Global := s"http://localhost:${(httpServerPort in Global).value}")
+    httpServerAddress in Global := s"http://localhost:${(httpServerPort in Global).value}") ++
+    addHttpServices(serveBuildFolderService)
 
   // ++
 
   private val serverAttrKey = AttributeKey[Server]("sbt-httpserver-instance")
 
   private def unload(state: State): State = {
-    state.get(serverAttrKey).foreach(_.shutdownNow)
-    state.remove(serverAttrKey)
+    state.get(serverAttrKey) match {
+      case Some(s) =>
+        s.shutdownNow
+        state.remove(serverAttrKey)
+      case _ => state
+    }
   }
 
-  private def load(state: State, service: org.http4s.server.HttpService, port: Int): State = {
-    val server = BlazeBuilder.bindHttp(port)
-      .mountService(service, "/")
-      .run
-    val newState = state.put(serverAttrKey, server)
-    newState.addExitHook(unload(newState))
+  private def load(state: State, services: Seq[HttpService], port: Int): State = {
+    if (services.isEmpty) state
+    else {
+      val server = BlazeBuilder.bindHttp(port)
+        .mountService(services.reduce(_ orElse _), "/")
+        .run
+      val newState = state.put(serverAttrKey, server)
+      newState.addExitHook(unload(newState))
+    }
   }
 
 }
@@ -82,5 +82,8 @@ object SbtHttpServerPlugin extends AutoPlugin {
 
   override def globalSettings: Seq[Setting[_]] =
     httpServerSettings
+
+  override def projectSettings: Seq[Setting[_]] =
+    addHttpServices(buildEventService((compile in Compile) -> "compiled"))
 
 }

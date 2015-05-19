@@ -16,11 +16,13 @@ crossScalaVersions in ThisBuild := Seq()
 
 resolvers += "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases" // scalaz-stream
 
-val http4sv = "0.7.0"
-
 libraryDependencies ++= Seq(
-	"org.http4s" %% "http4s-dsl"         % http4sv,
-	"org.http4s" %% "http4s-blazeserver" % http4sv,
+	"org.scalatest" %% "scalatest" % "2.2.4" % "test",
+  	"io.backchat.hookup" %% "hookup" % "0.4.0" % "test",
+  	"org.json4s" %% "json4s-jackson"     % "3.2.11",
+  	"ch.qos.logback" % "logback-classic" % "1.1.2", //implements slf4j
+	"org.http4s" %% "http4s-dsl"         % "0.7.0",
+	"org.http4s" %% "http4s-blazeserver" % "0.7.0",
 	"net.databinder.dispatch" %% "dispatch-core" % "0.11.2")
 
 scalacOptions in ThisBuild ++= Seq(
@@ -55,3 +57,9 @@ publishArtifact in (Compile, packageSrc) := false
 publishArtifact in (Compile, packageDoc) := false
 
 bintrayRepository := "maven"
+
+updateOptions := updateOptions.value.withCachedResolution(true)
+
+// logLevel in Test := Level.Debug
+
+fork in Test := true // Hookup client jvm gets shutdown.
