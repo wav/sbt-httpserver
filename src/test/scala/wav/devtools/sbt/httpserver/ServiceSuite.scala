@@ -40,45 +40,24 @@ class ServiceSuite extends FunSuite {
     val mount = "eventstream"
     val endpoint = s"ws://localhost:$port/$mount"
     val (send, service) = EventStream.service(si(mount))
-    // start
-    def pipebuilder(conn: SocketConnection): LeafBuilder[ByteBuffer] =
-      new Http1ServerStage(URITranslation.translateRoot("/")(service), Some(conn)) with WebSocketSupport
-    val serverChannel = NIO1SocketServerChannelFactory(pipebuilder, 12, 8*1024)
-      .bind(new InetSocketAddress(port))
-    serverChannel.runAsync
+    val server = new SimpleWebSocketServer(port, Seq(service))
+    server.start
     val p = promise[String]
     val f = p.future
-    var client: DefaultHookupClient = null
-    abstract class Client extends DefaultHookupClient(HookupClientConfig(new URI(endpoint)))
+    var client = new SingleUseClient(new URI(endpoint),{
+      case TextMessage(message) =>
+        p.success(message)
+      case JsonMessage(message) =>
+        p.success(message.toString)
+    })
     try {
-      // receive (client)
-      client = new Client {
-        def receive = {
-          case Connected =>
-          case TextMessage(message) =>
-            p.success(message)
-          case JsonMessage(message) =>
-            p.success(message.toString)
-          case x =>
-            if (!p.isCompleted) p.failure(new IllegalArgumentException("bad message: " + x.toString))
-        }
-        connect() onSuccess {
-          case Success =>
-          case x =>
-            if (!p.isCompleted) p.failure(new IllegalArgumentException("unknown connection message: " + x.toString))
-        }
-      }
+      Await.result(client.connected, 10.seconds)
       send("Connected")
-      val r = if (f.isCompleted) f.value.get else Try(Await.result(f, 10.seconds))
+      val r = if (f.isCompleted) f.value.get else Try(Await.result(f, 0.5.seconds))
       assert("Connected" == r.get)
     } finally {
-      try {
-        client.close
-      }
-      try {
-        serverChannel.close
-      }
-
+      try { client.close }
+      // try { server.stop } // not required, it has a scalaz Catchable context
     }
   }
 
@@ -89,6 +68,7 @@ class ServiceSuite extends FunSuite {
     // val result = Await(ask("do something"), 5.seconds)
 
     // kill
+    ???
   }
 
 }

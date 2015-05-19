@@ -1,9 +1,9 @@
 package wav.devtools.sbt.httpserver
 
+import org.http4s.server.HttpService
 import org.http4s.util.CaseInsensitiveString
 import sbt._
 import Keys._
-import org.http4s.server._
 import org.http4s.server.blaze.BlazeBuilder
 
 object Import {
@@ -32,7 +32,6 @@ object Import {
         t.andFinally(emitter( s"""{"event":"$event","project":"$n"}"""))
       }
     Seq(k += s) ++ eventMapping.map(e => emit(e._1,e._2))
-    ??? // TODO: load in Global with WebSocket support
   }
 
   def addHttpServices(settings: ServiceSettings*): Seq[Setting[_]] =
@@ -55,7 +54,7 @@ object Import {
   private def unload(state: State): State = {
     state.get(serverAttrKey) match {
       case Some(s) =>
-        s.shutdownNow
+        s.stop
         state.remove(serverAttrKey)
       case _ => state
     }
@@ -64,9 +63,8 @@ object Import {
   private def load(state: State, services: Seq[HttpService], port: Int): State = {
     if (services.isEmpty) state
     else {
-      val server = BlazeBuilder.bindHttp(port)
-        .mountService(services.reduce(_ orElse _), "/")
-        .run
+      val server = new SimpleWebSocketServer(port, services)
+      server.start
       val newState = state.put(serverAttrKey, server)
       newState.addExitHook(unload(newState))
     }
