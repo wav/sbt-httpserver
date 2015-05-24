@@ -10,9 +10,9 @@ import org.http4s.util.CaseInsensitiveString
 import sbt.RichFile
 import scalaz.concurrent.Task
 
-object FileServer {
+import internaldsl.si
 
-  private val si = CaseInsensitiveString.apply _
+object FileServer {
 
   def service(endpoint: CaseInsensitiveString, mapping: Map[CaseInsensitiveString, (Seq[File], String => Boolean)]) = HttpService {
     case GET -> Root / mount / group / path if (

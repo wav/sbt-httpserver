@@ -2,14 +2,30 @@ package wav.devtools.sbt.httpserver
 
 import java.net.URI
 import io.backchat.hookup._
+import org.json4s.JValue
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{ExecutionContext, promise}
+import concurrent.{ExecutionContext, promise, Future}
 
-class SingleUseClient(val endpoint: URI, val handler: HookupClient.Receive)(implicit ec: ExecutionContext)
+
+
+object SingleUseClient {
+
+  class Sender(
+    string: String => Unit,
+    json: JValue => Unit) {
+    def ! (m: String): Unit = string(m)
+    def ! (m: JValue): Unit = json(m)
+  }
+
+}
+
+class SingleUseClient(
+  val endpoint: URI,
+  val handler: SingleUseClient.Sender => HookupClient.Receive)(implicit ec: ExecutionContext)
   extends DefaultHookupClient(HookupClientConfig(endpoint)) {
 
-  val logger = LoggerFactory.getLogger(classOf[SingleUseClient])
+  private val logger = LoggerFactory.getLogger(classOf[SingleUseClient])
 
   private val pconnected = promise[Unit]
 
@@ -31,7 +47,9 @@ class SingleUseClient(val endpoint: URI, val handler: HookupClient.Receive)(impl
       logger.debug("Discarded message: " + x.getClass)
   }
 
-  def receive() = connectionHandler orElse handler orElse errorHandler
+  private lazy val sender = new SingleUseClient.Sender(s => send(s), j => send(j))
+
+  def receive() = connectionHandler orElse handler(sender) orElse errorHandler
 
   connect() onSuccess {
     case Success =>
@@ -39,7 +57,5 @@ class SingleUseClient(val endpoint: URI, val handler: HookupClient.Receive)(impl
       if (!pconnected.isCompleted)
         pconnected.failure(new IllegalArgumentException("unknown connection message: " + x.toString))
   }
-
-
 
 }

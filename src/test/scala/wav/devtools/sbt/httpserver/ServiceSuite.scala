@@ -1,15 +1,9 @@
 package wav.devtools.sbt.httpserver
 
-import java.net.InetSocketAddress
-import java.nio.ByteBuffer
 import java.util.concurrent.Executors
-
-import org.http4s.blaze.channel.SocketConnection
-import org.http4s.blaze.channel.nio1.NIO1SocketServerChannelFactory
-import org.http4s.blaze.pipeline.LeafBuilder
-import org.http4s.server.blaze.{Http1ServerStage, WebSocketSupport, BlazeBuilder}
-import org.http4s.server.middleware.URITranslation
+import org.json4s._
 import org.scalatest.FunSuite
+import org.slf4j.LoggerFactory
 import sbt._
 import org.http4s.dsl._
 import io.backchat.hookup._
@@ -20,6 +14,8 @@ import scala.util.Try
 import internaldsl._
 
 class ServiceSuite extends FunSuite {
+
+  val logger = LoggerFactory.getLogger(classOf[ServiceSuite])
 
   implicit val ES = Executors.newScheduledThreadPool(1)
   implicit val EC = ExecutionContext.fromExecutorService(ES)
@@ -35,40 +31,77 @@ class ServiceSuite extends FunSuite {
     assert(content == result.get)
   }
 
-  test("A client that subscribes to an EventStream should receive a `Connected` message") {
+  test("A client that listens to server events (over web sockets) should receive a `Connected` message") {
     val port = 8084
-    val mount = "eventstream"
+    val mount = "MessageQueue.O"
     val endpoint = s"ws://localhost:$port/$mount"
-    val (send, service) = EventStream.service(si(mount))
-    val server = new SimpleWebSocketServer(port, Seq(service))
+    val queue = MessageQueue.O(si(mount))
+    val server = new SimpleWebSocketServer(port, Seq(queue.service))
     server.start
     val p = promise[String]
     val f = p.future
-    var client = new SingleUseClient(new URI(endpoint),{
+    var client = new SingleUseClient(new URI(endpoint),_ => {
       case TextMessage(message) =>
         p.success(message)
-      case JsonMessage(message) =>
-        p.success(message.toString)
     })
     try {
       Await.result(client.connected, 10.seconds)
-      send("Connected")
+      queue.enqueue("Connected")
       val r = if (f.isCompleted) f.value.get else Try(Await.result(f, 0.5.seconds))
       assert("Connected" == r.get)
     } finally {
       try { client.close }
-      // try { server.stop } // not required, it has a scalaz Catchable context
     }
   }
 
-  test("A server can RPC a client and receive a response") {
-    // start
+  test("A server can send and receive messages (over web sockets) from connected clients") {
+    val port = 8085
+    val mount = "MessageQueue.IO"
+    val endpoint = s"ws://localhost:$port/$mount"
+    val queue = MessageQueue.IO(si(mount))
+    val server = new SimpleWebSocketServer(port, Seq(queue.service))
+    server.start
+    val p = promise[String]
+    val f = p.future
+    var client = new SingleUseClient(new URI(endpoint),sender => {
+      case TextMessage(message) =>
+        p.success(message)
+        sender ! "Hello Server"
+    })
+    try {
+      Await.result(client.connected, 5.seconds)
+      queue.enqueue("Hello Client")
+      val sent = if (f.isCompleted) f.value.get else Try(Await.result(f, 0.5.seconds))
+      assert("Hello Client" == sent.get)
+      val result = queue.take(1).runFor(5.seconds)
+      assert(result == Seq("Hello Server"))
+    } finally {
+      try { client.close }
+    }
+  }
 
-    // request/response (server->client->server)
-    // val result = Await(ask("do something"), 5.seconds)
-
-    // kill
-    ???
+  test("A server can make requests to connected clients and receive replies (over web sockets)") {
+    val port = 8086
+    val mount = "RequestReply"
+    val endpoint = s"ws://localhost:$port/$mount"
+    val exchange = RequestReply(si(mount))
+    val server = new SimpleWebSocketServer(port, Seq(exchange.service))
+    server.start
+    var client = new SingleUseClient(new URI(endpoint),sender => {
+      case JsonMessage(message) =>
+        val JArray(List(JString(id), JInt(n))) = message
+        sender ! JArray(List(JString(id), JInt(n+1)))
+    })
+    try {
+      val sum = for {
+        a <- exchange.ask("a", 1.toString)
+        b <- exchange.ask("b", 2.toString)
+      } yield (a.toInt + b.toInt)
+      val result = sum.runFor(5.seconds)
+      assert(result == 5)
+    } finally {
+      try { client.close }
+    }
   }
 
 }

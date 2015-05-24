@@ -20,24 +20,24 @@ object Import {
 
   import HttpServerKeys._
 
-  type ServiceSettings = SettingKey[Seq[HttpService]] => Seq[Setting[_]]
+  type ApplyServiceSettings = SettingKey[Seq[HttpService]] => Seq[Setting[_]]
 
-  lazy val serveBuildFolderService: ServiceSettings =
+  lazy val serveBuildFolderService: ApplyServiceSettings =
     _ += FileServer.service(si("files"), Seq((baseDirectory in ThisBuild).value))
 
-  def buildEventService[T](eventMapping: (TaskKey[T], String)*): ServiceSettings = k => {
-    val (emitter, s) = EventStream.service(si("buildEvents"))
-    def emit(t: TaskKey[T], event: String) =
+  def buildEventService[T](eventMapping: (TaskKey[T], String)*): ApplyServiceSettings = k => {
+    val queue = MessageQueue.O(si("buildEvents"))
+    def sendBuildEvent(t: TaskKey[T], event: String) =
       t <<= (name in t.scope, t) { (n, t) =>
-        t.andFinally(emitter( s"""{"event":"$event","project":"$n"}"""))
+        t.andFinally(queue.enqueue( s"""{"event":"$event","project":"$n"}"""))
       }
-    Seq(k += s) ++ eventMapping.map(e => emit(e._1,e._2))
+    Seq(k += queue.service) ++ eventMapping.map(e => sendBuildEvent(e._1,e._2))
   }
 
-  def addHttpServices(settings: ServiceSettings*): Seq[Setting[_]] =
+  def addHttpServices(settings: ApplyServiceSettings*): Seq[Setting[_]] =
     settings.map(_(httpServerService in Global)).flatten
 
-  def setHttpServices(settings: ServiceSettings*): Seq[Setting[_]] =
+  def setHttpServices(settings: ApplyServiceSettings*): Seq[Setting[_]] =
     (httpServerService in Global := Seq.empty) +: addHttpServices(settings: _*)
 
   lazy val httpServerSettings: Seq[Setting[_]] = Seq(

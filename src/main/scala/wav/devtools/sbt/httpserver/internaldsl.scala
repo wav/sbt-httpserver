@@ -1,10 +1,16 @@
 package wav.devtools.sbt.httpserver
 
 import org.http4s._
+import org.http4s.dsl._
 import org.http4s.server._
+import org.http4s.server.websocket._
 import org.http4s.util.CaseInsensitiveString
+import org.http4s.websocket.WebsocketBits.WebSocketFrame
 
-object internaldsl {
+import scalaz.concurrent.Task
+import scalaz.stream._
+
+private [httpserver] object internaldsl {
 
   implicit def headersAsStrings(headers: Headers): Traversable[(String, String)] =
     headers.map(e => (e.name.toString -> e.value.toString))
@@ -33,5 +39,10 @@ object internaldsl {
       body = r.body.map(makeEntityBody).getOrElse(null))
       .putHeaders(r.headers.toSeq.map(h => Header(h._1.name.toString, h._2)): _*))
       .run
+
+  def exchange(endpoint: CaseInsensitiveString, in: Process[Task,WebSocketFrame], out: Sink[Task, WebSocketFrame]): HttpService =
+    HttpService {
+      case req@GET -> Root / mount if endpoint.equals(si(mount)) => WS(Exchange(in,out))
+    }
 
 }
