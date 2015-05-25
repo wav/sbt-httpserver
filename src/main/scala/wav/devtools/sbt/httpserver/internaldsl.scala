@@ -6,6 +6,7 @@ import org.http4s.server._
 import org.http4s.server.websocket._
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.websocket.WebsocketBits.WebSocketFrame
+import org.json4s.DefaultFormats
 
 import scala.util.{Success,Failure}
 import scala.concurrent.{ExecutionContext, Promise}
@@ -15,6 +16,8 @@ import scalaz.\/.{right,left}
 import scalaz.stream._
 
 private [httpserver] object internaldsl {
+
+  implicit val formats = DefaultFormats
 
   implicit def headersAsStrings(headers: Headers): Traversable[(String, String)] =
     headers.map(e => (e.name.toString -> e.value.toString))

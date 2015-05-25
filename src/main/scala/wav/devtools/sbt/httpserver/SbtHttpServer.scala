@@ -4,11 +4,10 @@ import org.http4s.server.HttpService
 import org.http4s.util.CaseInsensitiveString
 import sbt._
 import Keys._
-import org.http4s.server.blaze.BlazeBuilder
 
 object Import {
 
-  val si = CaseInsensitiveString.apply _
+  implicit val asCaseInsensitive = CaseInsensitiveString.apply _
 
   object HttpServerKeys {
 
@@ -23,10 +22,10 @@ object Import {
   type ApplyServiceSettings = SettingKey[Seq[HttpService]] => Seq[Setting[_]]
 
   lazy val serveBuildFolderService: ApplyServiceSettings =
-    _ += FileServer.service(si("files"), Seq((baseDirectory in ThisBuild).value))
+    _ += FileServer.service("files", Seq((baseDirectory in ThisBuild).value))
 
   def buildEventService[T](eventMapping: (TaskKey[T], String)*): ApplyServiceSettings = k => {
-    val queue = MessageQueue.O(si("buildEvents"))
+    val queue = MessageQueue.O("buildEvents")
     def sendBuildEvent(t: TaskKey[T], event: String) =
       t <<= (name in t.scope, t) { (n, t) =>
         t.andFinally(queue.enqueue( s"""{"event":"$event","project":"$n"}"""))

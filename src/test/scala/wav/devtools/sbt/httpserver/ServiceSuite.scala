@@ -1,7 +1,9 @@
 package wav.devtools.sbt.httpserver
 
 import java.util.concurrent.Executors
+import org.json4s.JsonAST.JValue
 import org.json4s._
+import org.json4s.jackson.JsonMethods._
 import org.scalatest.FunSuite
 import org.slf4j.LoggerFactory
 import sbt._
@@ -40,7 +42,7 @@ class ServiceSuite extends FunSuite {
     server.start
     val p = promise[String]
     val f = p.future
-    var client = new TestClient(new URI(endpoint),_ => {
+    val client = new TestClient(new URI(endpoint),_ => {
       case TextMessage(message) =>
         p.success(message)
     })
@@ -63,7 +65,7 @@ class ServiceSuite extends FunSuite {
     server.start
     val p = promise[String]
     val f = p.future
-    var client = new TestClient(new URI(endpoint),sender => {
+    val client = new TestClient(new URI(endpoint),sender => {
       case TextMessage(message) =>
         p.success(message)
         sender ! "Hello Server"
@@ -84,17 +86,17 @@ class ServiceSuite extends FunSuite {
     val port = 8086
     val mount = "RequestReply"
     val endpoint = s"ws://localhost:$port/$mount"
-    val exchange = RequestReply(si(mount))
+    val exchange = RequestResponse(si(mount))
     val server = new SimpleWebSocketServer(port, Seq(exchange.service))
     server.start
-    var client = new TestClient(new URI(endpoint),sender => {
-      case JsonMessage(RequestData(rd)) =>
-        sender ! rd.copy(data = (rd.data.toInt+1).toString).toJson
+    val client = new TestClient(new URI(endpoint),sender => {
+      case JsonMessage(RequestData(id, n)) =>
+        sender ! ResponseData(id, (n.toInt+1).toString).toString
     })
     try {
       val sum = for {
-        a <- exchange.ask("a", 1.toString)
-        b <- exchange.ask("b", 2.toString)
+        a <- exchange.ask("a", 1)
+        b <- exchange.ask("b", 2)
       } yield (a.toInt + b.toInt)
       val result = sum.runFor(5.seconds)
       assert(result == 5)
