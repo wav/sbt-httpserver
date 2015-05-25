@@ -7,7 +7,11 @@ import org.http4s.server.websocket._
 import org.http4s.util.CaseInsensitiveString
 import org.http4s.websocket.WebsocketBits.WebSocketFrame
 
+import scala.util.{Success,Failure}
+import scala.concurrent.{ExecutionContext, Promise}
 import scalaz.concurrent.Task
+import scalaz.\/.{right,left}
+
 import scalaz.stream._
 
 private [httpserver] object internaldsl {
@@ -44,5 +48,15 @@ private [httpserver] object internaldsl {
     HttpService {
       case req@GET -> Root / mount if endpoint.equals(si(mount)) => WS(Exchange(in,out))
     }
+
+  implicit class RichPromise[T](p: Promise[T])(implicit ec: ExecutionContext) {
+    def task: Task[T] =
+      Task.async { f =>
+        p.future.onComplete {
+          case Success(a) => f(right(a))
+          case Failure(t) => f(left(t))
+        }
+      }
+  }
 
 }

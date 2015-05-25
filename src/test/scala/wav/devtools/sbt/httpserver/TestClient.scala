@@ -9,7 +9,7 @@ import concurrent.{ExecutionContext, promise, Future}
 
 
 
-object SingleUseClient {
+object TestClient {
 
   class Sender(
     string: String => Unit,
@@ -20,12 +20,12 @@ object SingleUseClient {
 
 }
 
-class SingleUseClient(
+class TestClient(
   val endpoint: URI,
-  val handler: SingleUseClient.Sender => HookupClient.Receive)(implicit ec: ExecutionContext)
+  val handler: TestClient.Sender => HookupClient.Receive)(implicit ec: ExecutionContext)
   extends DefaultHookupClient(HookupClientConfig(endpoint)) {
 
-  private val logger = LoggerFactory.getLogger(classOf[SingleUseClient])
+  private val logger = LoggerFactory.getLogger(classOf[TestClient])
 
   private val pconnected = promise[Unit]
 
@@ -47,7 +47,7 @@ class SingleUseClient(
       logger.debug("Discarded message: " + x.getClass)
   }
 
-  private lazy val sender = new SingleUseClient.Sender(s => send(s), j => send(j))
+  private lazy val sender = new TestClient.Sender(s => send(s), j => send(j))
 
   def receive() = connectionHandler orElse handler(sender) orElse errorHandler
 

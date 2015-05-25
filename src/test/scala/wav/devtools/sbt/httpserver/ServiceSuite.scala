@@ -40,7 +40,7 @@ class ServiceSuite extends FunSuite {
     server.start
     val p = promise[String]
     val f = p.future
-    var client = new SingleUseClient(new URI(endpoint),_ => {
+    var client = new TestClient(new URI(endpoint),_ => {
       case TextMessage(message) =>
         p.success(message)
     })
@@ -63,7 +63,7 @@ class ServiceSuite extends FunSuite {
     server.start
     val p = promise[String]
     val f = p.future
-    var client = new SingleUseClient(new URI(endpoint),sender => {
+    var client = new TestClient(new URI(endpoint),sender => {
       case TextMessage(message) =>
         p.success(message)
         sender ! "Hello Server"
@@ -87,10 +87,9 @@ class ServiceSuite extends FunSuite {
     val exchange = RequestReply(si(mount))
     val server = new SimpleWebSocketServer(port, Seq(exchange.service))
     server.start
-    var client = new SingleUseClient(new URI(endpoint),sender => {
-      case JsonMessage(message) =>
-        val JArray(List(JString(id), JInt(n))) = message
-        sender ! JArray(List(JString(id), JInt(n+1)))
+    var client = new TestClient(new URI(endpoint),sender => {
+      case JsonMessage(RequestData(rd)) =>
+        sender ! rd.copy(data = (rd.data.toInt+1).toString).toJson
     })
     try {
       val sum = for {
