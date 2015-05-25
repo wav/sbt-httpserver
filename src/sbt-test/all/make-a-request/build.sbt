@@ -6,7 +6,7 @@ enablePlugins(SbtHttpServerPlugin)
 
 lazy val testService = taskKey[Unit]("Check if the HttpService is running")
 
-setHttpServices(_ += FileServer.service(si("resources"), (resourceDirectories in Compile).value))
+setHttpServices(_ += FileServer.service("resources", (resourceDirectories in Compile).value))
 
 testService := {
 	val fileToServe = (resourceDirectory in Compile).value / "test.txt"

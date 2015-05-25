@@ -6,13 +6,8 @@ val V = sys.props.get("project.version").getOrElse("NOVERSION")
 
 val isReleaseTest = sys.props.get("isReleaseTest").getOrElse("no") == "yes"
 
-resolvers ++= {
-	if (isReleaseTest) Seq(
-		releaseRepo,
-	    "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases") // scalaz-stream
-	else Seq.empty
-}
+resolvers += "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases" // scalaz-stream
 
-externalResolvers := (if(isReleaseTest) Seq.empty else Seq(ivyLocal))
+externalResolvers := (if(isReleaseTest) Seq(releaseRepo) else Seq(ivyLocal))
 
 addSbtPlugin("wav.devtools" % "sbt-httpserver" % V)
