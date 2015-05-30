@@ -40,11 +40,11 @@ object MessageQueue {
   }
 
   case class O(endpoint: CaseInsensitiveString) extends OUT {
-    lazy val service: HttpService = exchange(endpoint, out, Process.halt)
+    lazy val service: HttpService = exchange(endpoint, _ => (out, Process.halt))
   }
 
   case class IO(endpoint: CaseInsensitiveString) extends IN with OUT {
-    lazy val service: HttpService = exchange(endpoint, out, in)
+    lazy val service: HttpService = exchange(endpoint, _ => (out, in))
   }
 
 }

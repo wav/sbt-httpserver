@@ -83,7 +83,7 @@ class ServiceSuite extends FunSuite {
   test("A server can make requests to connected clients and receive replies (over web sockets)") {
     val port = 8086
     val mount = "RequestReply"
-    val endpoint = s"ws://localhost:$port/$mount"
+    val endpoint = s"ws://localhost:$port/$mount?labels=test"
     val exchange = RequestResponse(si(mount))
     val server = new SimpleWebSocketServer(port, Seq(exchange.service))
     server.start
@@ -93,8 +93,8 @@ class ServiceSuite extends FunSuite {
     })
     try {
       val Success(sum) = for {
-        JInt(a) <- exchange.ask("a", 1, 5.seconds)
-        JInt(b) <- exchange.ask("b", 2, 5.seconds)
+        (_, JInt(a)) <- exchange.ask("a", 1, Set("test"))
+        (_,JInt(b)) <- exchange.ask("b", 2, Set("test"))
       } yield a + b
       assert(sum == 5)
     } finally {

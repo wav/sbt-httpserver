@@ -47,9 +47,11 @@ private [httpserver] object internaldsl {
       .putHeaders(r.headers.toSeq.map(h => Header(h._1.name.toString, h._2)): _*))
       .run
 
-  def exchange(endpoint: CaseInsensitiveString, out: Process[Task,WebSocketFrame], in: Sink[Task, WebSocketFrame]): HttpService =
+  def exchange(endpoint: CaseInsensitiveString, outIn: Request => (Process[Task,WebSocketFrame], Sink[Task, WebSocketFrame])): HttpService =
     HttpService {
-      case req@GET -> Root / mount if endpoint.equals(si(mount)) => WS(Exchange(out,in))
+      case req@GET -> Root / mount if endpoint.equals(si(mount)) =>
+        val (out, in) = outIn(req)
+        WS(Exchange(out,in))
     }
 
 }
