@@ -25,10 +25,9 @@ var BuildServices = (function() {
     }
 
     function closed(id) {
-      stopped(id);
       if (tryConnectHandle != null) return;
-      tryConnectHandle = setInterval(function() { start(started, stopped); },5000);
-      stopped();
+      tryConnectHandle = setInterval(function() { start(started, stopped); },2000);
+      stopped(id);
     }
 
     function startCommandService() {
@@ -93,7 +92,7 @@ var BuildServices = (function() {
       var m = {};
       m[command]=data;
       console.debug("sent", m);
-      commandService.send(m);
+      commandService.send(JSON.stringify(m));
     }
 
   return {

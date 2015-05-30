@@ -23,12 +23,12 @@ import scalaz.stream.async.unboundedQueue
 object ResponseData {
   def unapply(s: String): Option[ResponseData] =
     Try {
-      val (id, data) = parse(s).extract[(String, String)]
+      val (id, data) = parse(s).extract[(String, JValue)]
       ResponseData(id, data)
     }.toOption
 }
 
-case class ResponseData(id: String, data: String) {
+case class ResponseData(id: String, data: JValue) {
   override def toString: String = write((id, data))
 }
 
@@ -42,14 +42,18 @@ object RequestData {
 }
 
 case class RequestResponse(endpoint: CaseInsensitiveString) extends MessageQueue.OUT {
-  private val activeRequests = mutable.Map[String, Promise[String]]()
-  private val in = sink.lift[Task, ResponseData](m => Task {
-    activeRequests.get(m.id).foreach(_.success(m.data))
-  }).contramap[WebSocketFrame] { case Text(ResponseData(rd), _) => rd }
+  private val activeRequests = mutable.Map[String, Promise[JValue]]()
+  private val in = sink.lift[Task, WebSocketFrame](m => Task {
+    m match {
+      case Text(ResponseData(rd), _) =>
+        activeRequests.get(rd.id).foreach(_.success(rd.data))
+      case _ =>
+    }
+  })
 
-  def ask[T](id: String, message: T, atMost: Duration)(implicit m: Manifest[T]): Try[String] = {
+  def ask[T](id: String, message: T, atMost: Duration)(implicit m: Manifest[T]): Try[JValue] = {
     assert(!activeRequests.contains(id))
-    val p = promise[String]
+    val p = promise[JValue]
     activeRequests(id) = p
     enqueue(RequestData(id, message).toString)
     Try(Await.result(p.future, atMost)).transform(

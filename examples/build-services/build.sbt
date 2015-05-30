@@ -22,7 +22,7 @@ sendCommand := {
   val log = streams.value.log
   val args: Seq[String] = Def.spaceDelimited("<arg>").parsed
   commandService.value.ask(args(0), args.drop(1), 1.seconds) match {
-    case Success(data) => log.info(data)
+    case Success(data) => log.info(data.toString)
     case Failure(t) => log.error(t.toString)
   }
 }
