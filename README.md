@@ -25,6 +25,8 @@ import wav.devtools.sbt.httpserver.SbtHttpServerPlugin.autoImport._
 enablePlugins(SbtHttpServerPlugin)
 ```
 
+See a full example here: [build-services]("examples/build-services/build.sbt")
+
 ## Settings
 
 The `httpServerService in Global` is where you define an Http4s `HttpService`. This will be started when sbt loads and hosted on the port defined in the setting `httpServerPort in Global` (default 8083).

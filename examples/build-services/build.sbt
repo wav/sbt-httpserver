@@ -8,7 +8,7 @@ lazy val commandService = settingKey[RequestResponse]("commandService")
 
 lazy val sendCommand = inputKey[Unit]("Send a command to an active browser client")
 
-commandService in Global := RequestResponse("commands")
+commandService := RequestResponse("commands")
 
 // Host the app at "http://localhost:8083/app/index.html"
 setHttpServices(

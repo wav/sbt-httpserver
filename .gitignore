@@ -3,3 +3,4 @@
 **/project
 test.txt
 lib-sources
+sbt-httpserver.log
