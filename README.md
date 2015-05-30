@@ -25,7 +25,7 @@ import wav.devtools.sbt.httpserver.SbtHttpServerPlugin.autoImport._
 enablePlugins(SbtHttpServerPlugin)
 ```
 
-See a full example here: [build-services]("examples/build-services/build.sbt")
+See a full example here: [build-services](examples/build-services/build.sbt)
 
 ## Settings
 
