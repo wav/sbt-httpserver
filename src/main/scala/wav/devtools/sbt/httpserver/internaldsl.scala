@@ -47,19 +47,9 @@ private [httpserver] object internaldsl {
       .putHeaders(r.headers.toSeq.map(h => Header(h._1.name.toString, h._2)): _*))
       .run
 
-  def exchange(endpoint: CaseInsensitiveString, in: Process[Task,WebSocketFrame], out: Sink[Task, WebSocketFrame]): HttpService =
+  def exchange(endpoint: CaseInsensitiveString, out: Process[Task,WebSocketFrame], in: Sink[Task, WebSocketFrame]): HttpService =
     HttpService {
-      case req@GET -> Root / mount if endpoint.equals(si(mount)) => WS(Exchange(in,out))
+      case req@GET -> Root / mount if endpoint.equals(si(mount)) => WS(Exchange(out,in))
     }
-
-  implicit class RichPromise[T](p: Promise[T])(implicit ec: ExecutionContext) {
-    def task: Task[T] =
-      Task.async { f =>
-        p.future.onComplete {
-          case Success(a) => f(right(a))
-          case Failure(t) => f(left(t))
-        }
-      }
-  }
 
 }

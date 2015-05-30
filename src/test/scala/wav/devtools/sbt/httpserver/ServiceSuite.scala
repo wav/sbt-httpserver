@@ -1,9 +1,6 @@
 package wav.devtools.sbt.httpserver
 
 import java.util.concurrent.Executors
-import org.json4s.JsonAST.JValue
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
 import org.scalatest.FunSuite
 import org.slf4j.LoggerFactory
 import sbt._
@@ -11,7 +8,7 @@ import org.http4s.dsl._
 import io.backchat.hookup._
 import scala.concurrent.{Await, ExecutionContext, promise}
 import concurrent.duration._
-import scala.util.Try
+import scala.util.{Try, Success}
 
 import internaldsl._
 
@@ -94,12 +91,11 @@ class ServiceSuite extends FunSuite {
         sender ! ResponseData(id, (n.toInt+1).toString).toString
     })
     try {
-      val sum = for {
-        a <- exchange.ask("a", 1)
-        b <- exchange.ask("b", 2)
+      val Success(sum) = for {
+        a <- exchange.ask("a", 1, 5.seconds)
+        b <- exchange.ask("b", 2, 5.seconds)
       } yield (a.toInt + b.toInt)
-      val result = sum.runFor(5.seconds)
-      assert(result == 5)
+      assert(sum == 5)
     } finally {
       try { client.close }
     }

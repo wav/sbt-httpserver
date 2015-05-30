@@ -7,7 +7,7 @@ import org.http4s.websocket.WebsocketBits._
 import scalaz.concurrent.Task
 import scalaz.{\/-, -\/}
 import scalaz.stream._
-import scalaz.stream.async.unboundedQueue
+import scalaz.stream.async.{unboundedQueue, topic}
 
 import internaldsl._
 
@@ -16,7 +16,11 @@ object MessageQueue {
   trait OUT {
     private val q = unboundedQueue[WebSocketFrame]
 
-    protected val out = q.dequeue
+    private val t = topic[WebSocketFrame]()
+
+    Process.repeat(q.dequeue.to(t.publish)).run.runAsync(_ => ())
+
+    protected val out = t.subscribe
 
     def enqueue(s: String): Unit = q.enqueueOne(Text(s)).run
   }
