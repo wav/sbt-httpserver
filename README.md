@@ -33,4 +33,4 @@ The `httpServerService in Global` is where you define an Http4s `HttpService`. T
 
 The default `httpServerService in Global` is a file server that serves your build folder.
 
-For more settings, see [SbtHttpServer.scala](src/main/scala/wav/devtools/sbt/httpserver/SbtHttpServer.scala)
+For more settings, see [Plugin.scala](src/main/scala/wav/devtools/sbt/httpserver/Plugin.scala)
