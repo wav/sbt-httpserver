@@ -25,5 +25,5 @@ testBuildService := {
   import dispatch._, Defaults._
   val svc = url(address.value + "/buildService/app/index.js")
   val request = Http(svc OK as.String)
-  assert(request().contains("buildService"))
+  assert(request().contains("buildEventService"))
 }
