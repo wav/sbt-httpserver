@@ -1,7 +1,6 @@
 package wav.devtools.sbt.httpserver
 
 import org.http4s.server.HttpService
-import org.http4s.util.CaseInsensitiveString
 import org.http4s.websocket.WebsocketBits._
 
 import scalaz.concurrent.Task
@@ -39,11 +38,11 @@ object MessageQueue {
       }
   }
 
-  case class O(endpoint: CaseInsensitiveString) extends OUT {
+  case class O(endpoint: String) extends OUT {
     lazy val service: HttpService = exchange(endpoint, _ => (out, Process.halt))
   }
 
-  case class IO(endpoint: CaseInsensitiveString) extends IN with OUT {
+  case class IO(endpoint: String) extends IN with OUT {
     lazy val service: HttpService = exchange(endpoint, _ => (out, in))
   }
 

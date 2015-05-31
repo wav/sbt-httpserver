@@ -4,25 +4,18 @@ import org.http4s._
 import org.http4s.dsl._
 import org.http4s.server._
 import org.http4s.server.websocket._
-import org.http4s.util.CaseInsensitiveString
 import org.http4s.websocket.WebsocketBits.WebSocketFrame
 import org.json4s.DefaultFormats
-
-import scala.util.{Success,Failure}
-import scala.concurrent.{ExecutionContext, Promise}
 import scalaz.concurrent.Task
-import scalaz.\/.{right,left}
 
 import scalaz.stream._
 
-private [httpserver] object internaldsl {
+private [httpserver] object internaldsl extends Syntax {
 
   implicit val formats = DefaultFormats
 
   implicit def headersAsStrings(headers: Headers): Traversable[(String, String)] =
     headers.map(e => (e.name.toString -> e.value.toString))
-
-  val si = CaseInsensitiveString.apply _
 
   def makeEntityBody(body: String): EntityBody = {
     import scodec.bits.ByteVector
@@ -47,11 +40,13 @@ private [httpserver] object internaldsl {
       .putHeaders(r.headers.toSeq.map(h => Header(h._1.name.toString, h._2)): _*))
       .run
 
-  def exchange(endpoint: CaseInsensitiveString, outIn: Request => (Process[Task,WebSocketFrame], Sink[Task, WebSocketFrame])): HttpService =
+  def exchange(endpoint: String, outIn: Request => (Process[Task,WebSocketFrame], Sink[Task, WebSocketFrame])): HttpService = {
+    val endpointPath = Path(endpoint.split("/").toList)
     HttpService {
-      case req@GET -> Root / mount if endpoint.equals(si(mount)) =>
+      case req @ GET -> path if path.equals(endpointPath) =>
         val (out, in) = outIn(req)
-        WS(Exchange(out,in))
+        WS(Exchange(out, in))
     }
+  }
 
 }

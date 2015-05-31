@@ -21,6 +21,7 @@ libraryDependencies ++= Seq(
   "io.backchat.hookup" %% "hookup" % "0.4.0" % "test",
   "org.json4s" %% "json4s-jackson" % "3.2.11",
   "ch.qos.logback" % "logback-classic" % "1.1.2", //implements slf4j
+  "com.google.guava" % "guava" % "18.0",
   "org.http4s" %% "http4s-dsl" % "0.7.0",
   "org.http4s" %% "http4s-blazeserver" % "0.7.0",
   "net.databinder.dispatch" %% "dispatch-core" % "0.11.2")

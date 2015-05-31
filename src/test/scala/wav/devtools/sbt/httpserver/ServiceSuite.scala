@@ -26,7 +26,7 @@ class ServiceSuite extends FunSuite {
     val wd = file(".")
     val resource = wd / "test.txt"
     IO.write(resource, content)
-    val service = endpoint(FileServer.service(si("files"), Seq(wd))) _
+    val service = endpoint(FileServer.service("files", Seq(wd))) _
     val result = service(req(GET, "files/test.txt")).map(r => readEntityBody(r.body))
     assert(content == result.get)
   }
@@ -35,7 +35,7 @@ class ServiceSuite extends FunSuite {
     val port = 8084
     val mount = "MessageQueue.O"
     val endpoint = s"ws://localhost:$port/$mount"
-    val queue = MessageQueue.O(si(mount))
+    val queue = MessageQueue.O(mount)
     val server = new SimpleWebSocketServer(port, Seq(queue.service))
     server.start
     val p = promise[String]
@@ -58,7 +58,7 @@ class ServiceSuite extends FunSuite {
     val port = 8085
     val mount = "MessageQueue.IO"
     val endpoint = s"ws://localhost:$port/$mount"
-    val queue = MessageQueue.IO(si(mount))
+    val queue = MessageQueue.IO(mount)
     val server = new SimpleWebSocketServer(port, Seq(queue.service))
     server.start
     val p = promise[String]
@@ -69,11 +69,11 @@ class ServiceSuite extends FunSuite {
         sender ! "Hello Server"
     })
     try {
-      Await.result(client.connected, 5.seconds)
+      Await.result(client.connected, 1.seconds)
       queue.enqueue("Hello Client")
-      val sent = if (f.isCompleted) f.value.get else Try(Await.result(f, 0.5.seconds))
+      val sent = if (f.isCompleted) f.value.get else Try(Await.result(f, 1.seconds))
       assert("Hello Client" == sent.get)
-      val result = queue.take(1).runFor(5.seconds)
+      val result = queue.take(1).runFor(1.seconds)
       assert(result == Seq("Hello Server"))
     } finally {
       try { client.close }
@@ -84,7 +84,7 @@ class ServiceSuite extends FunSuite {
     val port = 8086
     val mount = "RequestReply"
     val endpoint = s"ws://localhost:$port/$mount?labels=test"
-    val exchange = RequestResponse(si(mount))
+    val exchange = RequestResponse(mount)
     val server = new SimpleWebSocketServer(port, Seq(exchange.service))
     server.start
     val client = new TestClient(new URI(endpoint),sender => {

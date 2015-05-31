@@ -20,7 +20,7 @@ Add the following to your `build.sbt` to start using it.
 
 ```scala
 import wav.devtools.sbt.httpserver.SbtHttpServerPlugin
-import wav.devtools.sbt.httpserver.SbtHttpServerPlugin.autoImport._
+import SbtHttpServerPlugin.autoImport._
 
 enablePlugins(SbtHttpServerPlugin)
 ```

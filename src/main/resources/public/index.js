@@ -1,8 +1,8 @@
 var BuildServices = (function() {
 
   var
-      commandService = null,
-      buildService = null,
+      buildCommandService = null,
+      buildEventService = null,
       tryConnectHandle = null,
       started = null,
       stopped = null,
@@ -10,16 +10,21 @@ var BuildServices = (function() {
         "echo": send
       };
 
+     function onBuildEvent(project, event) {
+        console.debug("reload");
+        location.reload();
+     }
+
     function start(onstart,onstop) {
       started = onstart;
       stopped = onstop;
-      startCommandService();
-      startBuildService();
+      startBuildCommandService();
+      startBuildEventService();
     }
 
     function opened(id) {
       started(id);
-      if (buildService != null && commandService != null) return;
+      if (buildEventService != null && buildCommandService != null) return;
       clearInterval(tryConnectHandle);
       tryConnectHandle = null;
     }
@@ -30,15 +35,15 @@ var BuildServices = (function() {
       stopped(id);
     }
 
-    function startCommandService() {
-      if (commandService != null) return;
-      var ws = new WebSocket("ws://localhost:8083/commands");
+    function startBuildCommandService() {
+      if (buildCommandService != null) return;
+      var ws = new WebSocket(BuildServicesConfig.buildCommandService);
       ws.onopen = function(e) {
-        opened("commandService");
+        opened("buildCommandService");
       }
       ws.onclose = function(e) {
-        commandService = null;
-        closed("commandService");
+        buildCommandService = null;
+        closed("buildCommandService");
       }
       ws.onerror = console.error;
       ws.onmessage = function(e) {
@@ -49,25 +54,25 @@ var BuildServices = (function() {
         console.debug("received", m);
         handler(command, m[command]);
       };
-      commandService = ws;
+      buildCommandService = ws;
     }
 
-    function startBuildService() {
-      if (buildService != null) return;
-      var ws = new WebSocket("ws://localhost:8083/buildEvents");
+    function startBuildEventService() {
+      if (buildEventService != null) return;
+      var ws = new WebSocket(BuildServicesConfig.buildEventService);
       ws.onopen = function(e) {
-        opened("buildService");
+        opened("buildEventService");
       }
       ws.onclose = function(e) {
-        buildService = null;
-        closed("buildService");
+        buildEventService = null;
+        closed("buildEventService");
       }
       ws.onerror = console.error;
       ws.onmessage = function(e) {
-        console.debug("reload");
-        location.reload();
+        var m = JSON.parse(e.data);
+        onBuildEvent(m["project"], m["event"]);
       };
-      buildService = ws;
+      buildEventService = ws;
     }
 
     function stop() {
@@ -75,24 +80,24 @@ var BuildServices = (function() {
         clearInterval(tryConnectHandle);
         tryConnectHandle = null;
       }
-      if (commandService != null) {
-        var svc = commandService;
-        commandService = null;
+      if (buildCommandService != null) {
+        var svc = buildCommandService;
+        buildCommandService = null;
         svc.close();
       }
-      if (buildService != null) {
-        var svc = buildService;
-        buildService = null;
+      if (buildEventService != null) {
+        var svc = buildEventService;
+        buildEventService = null;
         svc.close();
       }
     }
 
     function send(command, data) {
-      if (commandService == null) return;
+      if (buildCommandService == null) return;
       var m = {};
       m[command]=data;
       console.debug("sent", m);
-      commandService.send(JSON.stringify(m));
+      buildCommandService.send(JSON.stringify(m));
     }
 
   return {

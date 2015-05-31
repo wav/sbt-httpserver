@@ -1,7 +1,5 @@
 package wav.devtools.sbt.httpserver
 
-import org.http4s.DateTime
-
 import collection.mutable
 import concurrent.duration._
 import concurrent.{Promise, promise, Await}
@@ -14,7 +12,6 @@ import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization.write
 
 import org.http4s.server.HttpService
-import org.http4s.util.CaseInsensitiveString
 
 import scalaz.concurrent.Task
 
@@ -48,7 +45,7 @@ object RequestResponse {
   def ClientId(id: Int): String = "+clientId:" + id
 }
 
-case class RequestResponse(endpoint: CaseInsensitiveString) {
+case class RequestResponse(endpoint: String) {
   private var lastClientId = 0
   private val activeClients = mutable.Set[Int]()
   private val activeRequests = mutable.Map[String, (Int, Promise[(Int, JValue)])]()
