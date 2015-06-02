@@ -25,12 +25,8 @@ import SbtHttpServerPlugin.autoImport._
 enablePlugins(SbtHttpServerPlugin)
 ```
 
+An http service will be started on `localhost:8083`. The port is defined in the setting `HttpServerKeys.port in Global`. 
+
 See a full example here: [build-services](examples/build-services/build.sbt)
 
-## Settings
-
-The `httpServerService in Global` is where you define an Http4s `HttpService`. This will be started when sbt loads and hosted on the port defined in the setting `httpServerPort in Global` (default 8083).
-
-The default `httpServerService in Global` is a file server that serves your build folder.
-
-For more settings, see [Plugin.scala](src/main/scala/wav/devtools/sbt/httpserver/Plugin.scala)
+See settings here: [Plugin.scala](src/main/scala/wav/devtools/sbt/httpserver/Plugin.scala)
