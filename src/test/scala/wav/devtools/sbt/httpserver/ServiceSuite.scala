@@ -15,20 +15,30 @@ import internaldsl._
 
 class ServiceSuite extends FunSuite {
 
-  val logger = LoggerFactory.getLogger(classOf[ServiceSuite])
-
+  private val logger = LoggerFactory.getLogger(classOf[ServiceSuite])
   implicit val ES = Executors.newScheduledThreadPool(1)
   implicit val EC = ExecutionContext.fromExecutorService(ES)
 
-  val serverName = "localhost"
   test("A file server returns a file") {
-    val content = "this is a test file"
-    val wd = file(".")
-    val resource = wd / "test.txt"
-    IO.write(resource, content)
-    val service = endpoint(FileServer.service("files", Seq(wd))) _
-    val result = service(req(GET, "files/test.txt")).map(r => readEntityBody(r.body))
-    assert(content == result.get)
+    val testDir = file("target/test.dir")
+
+    val d1 = testDir / "dir1"
+    if (!d1.exists) d1.mkdirs
+    val fa = d1 / "a.txt"
+    IO.write(fa, "a")
+
+    val d2 = testDir / "dir2"
+    if (!d2.exists) d2.mkdirs
+    val fb = d2 / "b.txt"
+    IO.write(fb, "b")
+
+    val service = endpoint(FileServer.service("files", Seq(d1, d2))) _
+
+    val result1 = service(req(GET, "files/a.txt")).map(r => readEntityBody(r.body))
+    assert("a" == result1.get)
+
+    val result2 = service(req(GET, "files/b.txt")).map(r => readEntityBody(r.body))
+    assert("b" == result2.get)
   }
 
   test("A client that listens to server events (over web sockets) should receive a `Connected` message") {

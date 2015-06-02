@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import scalaz.concurrent.Task
 import com.google.common.io.Resources
 import java.net.URL
+import scala.util.Try
 
 object FileServer {
 
@@ -26,15 +27,16 @@ object FileServer {
     }
   }
 
-  def serveFrom(locations: Seq[String => URL], path: String): Task[Response] =
-    locations.map(_(path)).collectFirst {
+  def serveFrom(locations: Seq[String => URL], path: String): Task[Response] = {
+    val matches = locations.map(_(path)).collect {
       case url if url.getProtocol.equalsIgnoreCase("file") =>
         val f = new File(url.toURI)
-        if (f.exists) serve(f)
-        else notFound(url, path)
+         if (f.exists) Some(serve(f)) else None
       case url =>
-        serve(path, Resources.toByteArray(url))
-    }.get
+        Try(serve(path, Resources.toByteArray(url))).toOption
+    }.flatten
+    matches.headOption.getOrElse(NotFound(s"404 Not Found: '$path'"))
+  }
 
   def serveFrom[T](path: String)(implicit m: Manifest[T]): Task[Response] = {
     val url = Resources.getResource(m.runtimeClass, path)
@@ -57,12 +59,6 @@ object FileServer {
     else MediaType.`application/octet-stream`
   }
 
-  private def notFound(url: URL, path: String): Task[Response] = {
-    logger.debug(s"404 Not Found: '$path -> $url'")
-    NotFound(s"404 Not Found: '$path'")
-  }
-
-
 }
 
-private [httpserver] class FileServer
+private[httpserver] class FileServer
