@@ -1,13 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script type="text/javascript" src="config.js"></script>
-    <script type="text/javascript" src="index.js"></script>
+    <script type="text/javascript" src="/buildService/app/browser-polyfill.js"></script>
+    <script type="text/javascript" src="/buildService/app/config.js"></script>
+    <script type="text/javascript" src="/buildService/app/index.js"></script>
 </head>
 <body>
-    <script>
-      BuildServices.start();
+<script>
+        BuildServiceConfig.onServiceEvent = function(type, event, error) {
+          console.debug("onServiceEvent", type, event, error);
+        };
+        BuildServiceConfig.onBuildEvent = function(project, event) {
+          console.debug("onBuildEvent", project, event);
+          /* location.reload(); */
+        };
+        BuildServiceConfig.onBuildCommand = function(reply, command) {
+          console.debug("onBuildCommand", command);
+          reply(command);
+        };
+        var BuildService = new BuildService(BuildServiceConfig);
+        BuildService.start();
     </script>
-    Hello.
+Hello.
 </body>
 </html>

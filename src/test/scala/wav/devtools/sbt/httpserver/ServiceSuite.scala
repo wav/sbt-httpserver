@@ -1,7 +1,7 @@
 package wav.devtools.sbt.httpserver
 
 import java.util.concurrent.Executors
-import org.json4s.JsonAST.JInt
+import org.json4s.{JField, JInt}
 import org.scalatest.FunSuite
 import org.slf4j.LoggerFactory
 import sbt._
@@ -98,13 +98,13 @@ class ServiceSuite extends FunSuite {
     val server = new SimpleWebSocketServer(port, Seq(exchange.service))
     server.start
     val client = new TestClient(new URI(endpoint),sender => {
-      case JsonMessage(RequestData(id, n)) =>
-        sender ! ResponseData(id, JInt(n.toInt+1)).toString
+      case JsonMessage(Message((id, JInt(n)))) =>
+        sender ! Message(id, n+1)
     })
     try {
       val Success(sum) = for {
         (_, JInt(a)) <- exchange.ask("a", 1, Set("test"))
-        (_,JInt(b)) <- exchange.ask("b", 2, Set("test"))
+        (_, JInt(b)) <- exchange.ask("b", 2, Set("test"))
       } yield a + b
       assert(sum == 5)
     } finally {

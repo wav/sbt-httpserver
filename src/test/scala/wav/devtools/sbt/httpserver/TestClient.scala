@@ -44,7 +44,7 @@ class TestClient(
       if (!pconnected.isCompleted)
         pconnected.failure(new IllegalArgumentException("bad message: " + x.toString))
     case x =>
-      logger.debug("Discarded message: " + x.getClass)
+      logger.debug(s"Discarded message: ${x.getClass} = $x")
   }
 
   private lazy val sender = new TestClient.Sender(s => send(s), j => send(j))

@@ -14,9 +14,9 @@ object BuildService {
     FileServer.builder(s"${config.route}/app") { p =>
       if (p == "config.js") {
         FileServer.serve(p,
-          s"""var BuildServicesConfig = {
-             |  buildCommandService: "ws://localhost:${config.port}/${config.route}/commands",
-             |  buildEventService: "ws://localhost:${config.port}/${config.route}/events"
+          s"""var BuildServiceConfig = {
+             |  commandService: "ws://localhost:${config.port}/${config.route}/commands",
+             |  eventService: "ws://localhost:${config.port}/${config.route}/events"
              |};""".stripMargin.getBytes)
       } else {
         val path = if (p.endsWith("/")) (p + "index.html") else p

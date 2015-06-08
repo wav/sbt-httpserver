@@ -5,11 +5,12 @@ enablePlugins(SbtHttpServerPlugin)
 
 // Host the app at "http://localhost:8083/app/index.html"
 addHttpServices(
-  _ += FileServer.service("app",Seq((crossTarget in Compile).value / "classes"))
+  _ += FileServer.service("app",Seq((classDirectory in Compile).value))
 )
 
 addHttpServices(httpServerBuildServices)
 
+// Remember to run the `copyResources` task before opening the browser for the first time.
 emitBuildEvent((copyResources in Compile), "updated")
 
 lazy val sendCommand = inputKey[Unit]("Send a command to an active browser client, e.g. `sbt> sendCommand echo hello`")

@@ -50,7 +50,7 @@ object Import extends Syntax {
 
   def emitBuildEvent[T](t: TaskKey[T], event: String) =
     t <<= (name in t.scope, t, buildEventService) { (n, t, q) =>
-      if (q.isDefined) t.andFinally(q.get.enqueue( s"""{"event":"$event","project":"$n"}""")) else t
+      if (q.isDefined) t.andFinally(q.get.enqueue( s"""["$n", "$event"]""")) else t
     }
 
   private val serverAttrKey = AttributeKey[Server]("sbt-httpserver-instance")

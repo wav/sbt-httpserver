@@ -4,3 +4,4 @@
 test.txt
 lib-sources
 sbt-httpserver.log
+node_modules
