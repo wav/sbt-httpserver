@@ -31,12 +31,13 @@ object BuildService {
   def apply(): Option[BuildService] =
     buildService
 
-  def init(configure: BuildServiceConfig => Unit = identity): Unit =
-    if (!buildService.isDefined)
-      buildService = config.map { c =>
-        configure(c)
-        new BuildService(c)
-      }
+  def configure(configure: BuildServiceConfig => Unit = identity): Unit = {
+    buildService.foreach(_.stop)
+    buildService = config.map { c =>
+      configure(c)
+      new BuildService(c)
+    }
+  }
 
 }
 

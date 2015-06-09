@@ -4,6 +4,8 @@ organization in ThisBuild := "wav.devtools"
 
 name := "sbt-httpserver"
 
+version in ThisBuild := "0.3.1-SNAPSHOT"
+
 description := "Host an http4s service in SBT"
 
 licenses +=("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))

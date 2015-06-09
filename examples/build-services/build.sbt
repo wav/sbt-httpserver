@@ -3,6 +3,8 @@ import SbtHttpServerPlugin.autoImport._
 
 enablePlugins(SbtHttpServerPlugin)
 
+name := "app"
+
 // Host the app at "http://localhost:8083/app/index.html"
 addHttpServices(
   _ += FileServer.service("app",Seq((classDirectory in Compile).value))
