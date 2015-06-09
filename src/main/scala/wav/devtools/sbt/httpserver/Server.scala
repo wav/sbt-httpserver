@@ -16,14 +16,6 @@ abstract class Server {
   def stop: Unit
 }
 
-class SimpleServer(port: Int, services: Seq[HttpService]) extends Server {
-  private lazy val server = BlazeBuilder.bindHttp(port)
-    .mountService(services.reduce(_ orElse _), "/")
-    .run
-  lazy val start: Unit = server
-  lazy val stop: Unit = server.shutdownNow
-}
-
 class SimpleWebSocketServer(port: Int, services: Seq[HttpService]) extends Server {
   private def pipebuilder(conn: SocketConnection): LeafBuilder[ByteBuffer] =
     new Http1ServerStage(URITranslation.translateRoot("/")(services.reduce(_ orElse _)), Some(conn)) with WebSocketSupport

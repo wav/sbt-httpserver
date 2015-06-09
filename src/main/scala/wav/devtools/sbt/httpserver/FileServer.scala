@@ -2,7 +2,7 @@ package wav.devtools.sbt.httpserver
 
 import java.io.File
 import org.http4s.dsl._
-import org.http4s.Response
+import org.http4s.{Response, Request}
 import org.http4s.MediaType
 import org.http4s.headers.`Content-Type`
 import org.http4s.server.HttpService
@@ -17,13 +17,13 @@ object FileServer {
   private val logger = LoggerFactory.getLogger(classOf[FileServer])
 
   def service(endpoint: String, lookups: Seq[String => URL]) =
-    builder(endpoint)(serveFrom(lookups, _))
+    builder(endpoint)((_, path) => serveFrom(lookups, path))
 
-  def builder(endpoint: String)(handle: String => Task[Response]) = {
+  def builder(endpoint: String)(handle: (Request, String) => Task[Response]) = {
     val endpointPath = Path(endpoint.split("/").toList)
     HttpService {
-      case GET -> path if path.startsWith(endpointPath) =>
-        handle(path.toList.drop(endpointPath.toList.size).mkString("/"))
+      case req @ GET -> path if path.startsWith(endpointPath) =>
+        handle(req, path.toList.drop(endpointPath.toList.size).mkString("/"))
     }
   }
 

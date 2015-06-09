@@ -25,7 +25,7 @@ import SbtHttpServerPlugin.autoImport._
 enablePlugins(SbtHttpServerPlugin)
 ```
 
-An http service will be started on `localhost:8083`. The port is defined in the setting `HttpServerKeys.port in Global`. 
+An http service will be started on `localhost:8083`. The port is defined in the setting `HttpServerKeys.httpServerPort in Global`. 
 
 See a full example here: [build-services](examples/build-services/build.sbt)
 

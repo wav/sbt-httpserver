@@ -6,17 +6,16 @@ object BuildService {
 
   val DefaultConfig = new Config(route = "buildService")
 
-  class Config(val route: String) {
-    private [httpserver] var port: Int = _
-  }
+  class Config(val route: String)
 
   private [httpserver] def resourceService(config: Config): HttpService =
-    FileServer.builder(s"${config.route}/app") { p =>
+    FileServer.builder(s"${config.route}/app") { (r,p) =>
       if (p == "config.js") {
+
         FileServer.serve(p,
           s"""var BuildServiceConfig = {
-             |  commandService: "ws://localhost:${config.port}/${config.route}/commands",
-             |  eventService: "ws://localhost:${config.port}/${config.route}/events"
+             |  commandService: "ws://${r.serverName}:${r.serverPort}/${config.route}/commands",
+             |  eventService: "ws://${r.serverName}:${r.serverPort}/${config.route}/events"
              |};""".stripMargin.getBytes)
       } else {
         val path = if (p.endsWith("/")) (p + "index.html") else p

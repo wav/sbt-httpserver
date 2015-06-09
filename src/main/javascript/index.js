@@ -64,11 +64,17 @@ class BuildService {
         }
       },
       tryStart = id => {
+        if (connections[id] !== undefined) return;
         var ws = new WebSocket(addresses[id]);
         ws.onopen = e => {
           stopConnecting(id);
           var handler = onServiceEvent || debugServiceEvent;
           handler(id, "Started", undefined);
+        };
+        ws.onerror = e => {
+          if (e.target.readyState == 3) return;
+          var handler = onServiceEvent || debugServiceEvent;
+          handler(id, "Error", e);
         };
         ws.onclose = e => {
           if (connections[id] !== undefined) delete connections[id];
@@ -76,10 +82,6 @@ class BuildService {
           var handler = onServiceEvent || debugServiceEvent;
           handler(id, "Closed", undefined);
           startConnecting(id);
-        };
-        ws.onerror = e => {
-          var handler = onServiceEvent || debugServiceEvent;
-          handler(id, "Error", e);
         };
         ws.onmessage = e => {
           var
