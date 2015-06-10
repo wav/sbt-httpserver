@@ -2,7 +2,7 @@ enablePlugins(ScalaJSPlugin)
 
 scalaVersion := "2.11.6"
 
-libraryDependencies += "wav.devtools" %%% "sbt-httpserver-buildservice" % "0.3.1-SNAPSHOT"
+libraryDependencies += "wav.devtools" %%% "sbt-httpserver-buildservice" % "0.3.1"
 
 fastOptJS in Compile <<= (classDirectory in Compile, fastOptJS in Compile) map { (cd, js) =>
   val n = js.data.getName

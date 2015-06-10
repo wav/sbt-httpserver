@@ -55,6 +55,7 @@ object Import extends Syntax {
       services.getOrElse(Seq.empty)
     }
 
+  // This setting must be specified as a part of each project's settings.
   def emitBuildEvent[T](t: TaskKey[T], event: String) =
     t <<= (name in t.scope, t, buildEventService in Global) { (n, t, q) =>
       t.andFinally(q.get.enqueue( s"""["$n", "$event"]"""))

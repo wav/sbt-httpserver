@@ -2,13 +2,12 @@ package wav.devtools.sbt.httpserver
 
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.util.concurrent.RejectedExecutionException
 
 import org.http4s.blaze.channel.SocketConnection
 import org.http4s.blaze.channel.nio1.NIO1SocketServerChannelFactory
 import org.http4s.blaze.pipeline.LeafBuilder
 import org.http4s.server.HttpService
-import org.http4s.server.blaze.{BlazeBuilder, WebSocketSupport, Http1ServerStage}
+import org.http4s.server.blaze.{WebSocketSupport, Http1ServerStage}
 import org.http4s.server.middleware.URITranslation
 
 abstract class Server {

@@ -1,2 +1,4 @@
 > testService
 > testBuildService
+> set HttpServerKeys.httpServerPort in Global := 0
+> testService

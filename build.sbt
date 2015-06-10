@@ -4,11 +4,11 @@ organization in ThisBuild := "wav.devtools"
 
 name := "sbt-httpserver"
 
-version in ThisBuild := "0.3.1-SNAPSHOT"
+version in ThisBuild := "0.3.1"
 
 description := "Host an http4s service in SBT"
 
-licenses +=("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))
+licenses in ThisBuild +=("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html"))
 
 // ++
 
@@ -53,8 +53,6 @@ publishMavenStyle in ThisBuild := false
 bintrayReleaseOnPublish in ThisBuild := false
 
 publishArtifact in Test in ThisBuild := false
-
-publishArtifact in(Compile, packageSrc) := false
 
 publishArtifact in(Compile, packageDoc) in ThisBuild := false
 
